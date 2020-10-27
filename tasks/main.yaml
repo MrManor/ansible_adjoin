@@ -27,6 +27,7 @@
 - name: Checking Domain Join status
   shell: "/usr/sbin/realm discover {{ ad_server.domain }}"
   register: ad_status
+  changed_when: False
 
 - debug:
     msg: "Not AD configured for {{ ad_server.domain }} yet."
@@ -39,9 +40,8 @@
       Password.*: "{{ ad_pass }}"
   when: not ad_status.stdout is search('configured:.*kerberos-member')
 
-- name: Allow User Login without FQDN
+- name: Adjust sssd to our preferences
   lineinfile: 
-    backup: yes
     state: present
     dest: /etc/sssd/sssd.conf
     regexp: '^{{ item.search }}'
@@ -49,9 +49,28 @@
   with_items:
     - { search: 'use_fully_qualified_names', replace: 'use_fully_qualified_names = False' }
     - { search: 'fallback_homedir', replace: 'fallback_homedir = /home/%u' }
+    - { search: 'krb5_store_password_if_offline', replace: 'krb5_store_password_if_offline = False' }
   notify:
       - restart sssd
 
+- name: Adjust kerberos to our preferences
+  lineinfile: 
+    state: present
+    dest: /etc/krb5.conf
+    insertafter: 'libdefaults'
+    firstmatch: yes
+    regexp: '^(# )?default_realm'
+    line: "    default_realm = {{ ad_server.domain|upper }}"
+  notify:
+      - restart sssd
+
+- name: Set kerberos default realm
+  template:
+    src: krb5_realms.j2
+    dest: /etc/krb5.conf.d/realms
+  notify:
+      - restart sssd
+          
 # Keep of my sshd_config - configured elsewhere
 #- name: Allow Password Auth for all users except root
   #lineinfile: 
@@ -65,7 +84,7 @@
   #notify:
       #- restart sshd
 
-- name: ensure Domain admins can use sudo
+- name: ensure Domain Admins can use sudo
   copy:
     dest: /etc/sudoers.d/domadm
     content: |
@@ -75,3 +94,17 @@
     group: root
     mode: 0400
 
+- name: Configure SSH for GSSAPIAuthentication
+  lineinfile:
+    path: /etc/ssh/ssh_config
+    regexp: '^#?\s*?GSSAPIAuthentication'
+    line: '   GSSAPIAuthentication yes'
+
+- name: Configure SSH deamon for GSSAPIAuthentication
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?\s*?GSSAPIAuthentication'
+    line: 'GSSAPIAuthentication yes'
+    insertafter: '^#GSSAPI options'
+  notify:
+    - restart sshd

@@ -1,0 +1,9 @@
+[realms]
+  {{ ad_server.domain|upper }} = {
+    admin_server = {{ ad_server.fqdn }} 
+    kdc = {{ ad_server.fqdn }} 
+  }
+
+[domain_realm]
+  {{ ad_server.domain|lower }} = {{ ad_server.domain|upper }}
+  .{{ ad_server.domain|lower }} = {{ ad_server.domain|upper }}
