@@ -18,9 +18,8 @@
   package:
     name: "{{ packages }}"
 
-  
 #- name: Sync time with AD
-  # actually a nice idea - but ntpdate is depricated
+  # actually a nice idea - but ntpdate is depricated. Rewrite to chrony some day
   #shell: systemctl stop ntpd ; ntpdate {{ ad_server.ip }} && systemctl start ntpd
   #register: timesync_result
   #changed_when: false
@@ -29,11 +28,8 @@
   shell: "/usr/sbin/realm discover {{ ad_server.domain }}"
   register: ad_status
 
-#- debug: 
-    #msg="Status was {{ ad_status.stdout_lines }}"
-    
 - debug:
-    msg: "Ikke AD configureret for {{ ad_server.domain }} endnu."
+    msg: "Not AD configured for {{ ad_server.domain }} yet."
   when: not ad_status.stdout is search('configured:.*kerberos-member')
   
 - name: Join linux into domain
@@ -69,10 +65,13 @@
   #notify:
       #- restart sshd
 
-- name: Updating sudors for Domain Admins users
-  lineinfile: 
-    path: /etc/sudoers
-    state: present
-    regexp: '^%domain\\ admins'
-    line: '%domain\ admins ALL=(ALL:ALL) ALL'
-    validate: 'visudo -cf %s'
+- name: ensure Domain admins can use sudo
+  copy:
+    dest: /etc/sudoers.d/domadm
+    content: |
+      %domain\ admins ALL=(ALL:ALL) ALL
+      Defaults:%localadm       !requiretty
+    owner: root
+    group: root
+    mode: 0400
+

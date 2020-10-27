@@ -17,5 +17,15 @@ ldap_id_mapping = True
 use_fully_qualified_names = True
 fallback_homedir = /home/%u@%d
 access_provider = ad
-
-# Configured By Ansible
+ignore_group_members = True
+ldap_use_tokengroups = true
+ldap_group_nesting_level = 5
+ldap_idmap_range_size = 600000
+ldap_enumeration_search = 180
+ldap_access_filter = (!(loginShell=/sbin/nologin))
+{% if ansible_distribution_major_version == '8' %}
+ad_gpo_access_control = disabled
+{% endif %}
+fallback_homedir = /nfs/home/%u
+krb5_renewable_lifetime = 7d
+krb5_renew_interval = 3600

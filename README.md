@@ -9,11 +9,12 @@ Domain Administrators  default group is configured to enable sudo
 ### Ansible
 It was tested on the following versions:
  * 2.4
-
+ * 2.9.6
 
 ### Operating systems
 
 Tested with RHEL 7
+Tested with RHEL 8
 Targeted for EL 
 
 ## Example Playbook
@@ -38,8 +39,8 @@ Create ad.yaml file with the content below and include it into the plyabook. Mak
 - ad_server:
     ip: xxxx
     fqdn: ad1.example.com
-    user: svc_ad
-    pass: 'xxxx'
+    ad_user: svc_ad
+    ad-pass: 'xxxx'
     domain: example.com
 ```
 Modify ou_membership to add the machine to custom OU
