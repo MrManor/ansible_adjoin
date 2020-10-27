@@ -35,7 +35,7 @@
   
 - name: Join linux into domain
   expect:
-    command: /bin/bash -c "/usr/sbin/realm join --user={{ ad_user }} --computer-ou={{ ou_membership }}' {{ ad_server.domain }} "
+    command: /bin/bash -c "/usr/sbin/realm join --user={{ ad_user }} --computer-ou='{{ ou_membership }}' {{ ad_server.domain }} "
     responses:
       Password.*: "{{ ad_pass }}"
   when: not ad_status.stdout is search('configured:.*kerberos-member')
