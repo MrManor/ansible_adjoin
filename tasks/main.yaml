@@ -1,64 +1,78 @@
 ---
-- name: Installing Required packages
-  yum: 
-    name: "{{ item }}"
-    state: installed
-  with_items: "{{ pkgs }}"
+- name: Add system packages to packages list
+  set_fact:
+    packages: "{{ packages |default([]) + [item] }}"
+  with_items:
+    - realmd
+    - sssd
+    - oddjob
+    - oddjob-mkhomedir
+    - adcli
+    - samba-common
+    - samba-common-tools
+    - krb5-workstation
+    - expect
+    - python3-pexpect
 
-- name: Sync time with AD
-  shell: systemctl stop ntpd ; ntpdate {{ ad_server.ip }} && systemctl start ntpd
-  register: timesync_result
-  changed_when: false
+- name: Install required packages
+  package:
+    name: "{{ packages }}"
 
-- name: Install pexpect using pip
-  pip:
-    name: pexpect
+  
+#- name: Sync time with AD
+  # actually a nice idea - but ntpdate is depricated
+  #shell: systemctl stop ntpd ; ntpdate {{ ad_server.ip }} && systemctl start ntpd
+  #register: timesync_result
+  #changed_when: false
 
 - name: Checking Domain Join status
-  shell: /bin/bash -c "/usr/sbin/realm discover {{ ad_server.domain }} | grep -q sssd"
+  shell: "/usr/sbin/realm discover {{ ad_server.domain }}"
   register: ad_status
-  changed_when: false
-  ignore_errors: true
 
-
+#- debug: 
+    #msg="Status was {{ ad_status.stdout_lines }}"
+    
+- debug:
+    msg: "Ikke AD configureret for {{ ad_server.domain }} endnu."
+  when: not ad_status.stdout is search('configured:.*kerberos-member')
+  
 - name: Join linux into domain
   expect:
-      command: /bin/bash -c "/usr/sbin/realm join {{ ad_server.domain }} --user={{ ad_server.user }} --computer-ou={{ ou_membership }}"
-      responses:
-          Password.*: "{{ ad_server.pass }}"
-  when: ad_status.rc != 0
+    command: /bin/bash -c "/usr/sbin/realm join --user={{ ad_user }} --computer-ou={{ ou_membership }}' {{ ad_server.domain }} "
+    responses:
+      Password.*: "{{ ad_pass }}"
+  when: not ad_status.stdout is search('configured:.*kerberos-member')
 
 - name: Allow User Login without FQDN
   lineinfile: 
-     backup: yes
-     state: present
-     dest: /etc/sssd/sssd.conf
-     regexp: '^{{ item.search }}'
-     line: '{{ item.replace }}'
+    backup: yes
+    state: present
+    dest: /etc/sssd/sssd.conf
+    regexp: '^{{ item.search }}'
+    line: '{{ item.replace }}'
   with_items:
-      - { search: 'use_fully_qualified_names', replace: 'use_fully_qualified_names = False' }
-      - { search: 'fallback_homedir', replace: 'fallback_homedir = /home/%u' }
-    
+    - { search: 'use_fully_qualified_names', replace: 'use_fully_qualified_names = False' }
+    - { search: 'fallback_homedir', replace: 'fallback_homedir = /home/%u' }
   notify:
       - restart sssd
 
-- name: Allow Password Auth for all users except root
-  lineinfile: 
-     backup: yes
-     state: present
-     dest: /etc/ssh/sshd_config
-     regexp: '^{{ item.search }}'
-     line: '{{ item.replace }}'
-  with_items:      
-      - { search: 'PasswordAuthentication', replace: 'PasswordAuthentication yes' }
-      
-  notify:
-      - restart sshd
+# Keep of my sshd_config - configured elsewhere
+#- name: Allow Password Auth for all users except root
+  #lineinfile: 
+     #backup: yes
+     #state: present
+     #dest: /etc/ssh/sshd_config
+     #regexp: '^{{ item.search }}'
+     #line: '{{ item.replace }}'
+  #with_items:      
+      #- { search: 'PasswordAuthentication', replace: 'PasswordAuthentication yes' }
+  #notify:
+      #- restart sshd
 
 - name: Updating sudors for Domain Admins users
   lineinfile: 
-     path: /etc/sudoers
-     state: present
-     regexp: '^%domain\\ admins'
-     line: '%domain\ admins ALL=(ALL:ALL) ALL'
-     validate: 'visudo -cf %s'
+    path: /etc/sudoers
+    state: present
+    regexp: '^%domain\\ admins'
+    line: '%domain\ admins ALL=(ALL:ALL) ALL'
+    validate: 'visudo -cf %s'
