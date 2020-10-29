@@ -1,13 +1,14 @@
-=======
 # AD domain join
 Automate Linux Machine join AD using Ansible. This module is inspired from the work of 
   * https://github.com/rahulinux/ansible-domain-join 
   * https://github.com/riponbanik/ansible-role-domain-join
+  
+ I have done my best to be compliant with Redhats recommandations for domain join and group access filtering
 
 The group Domain Administrators is configured with sudo enabled
 
-Note: expect is used to supply the password for join. Please make sure your LANG settings dont mess 
-up the password prompt
+**Warning:** expect is used to supply the password for join. Please make sure your LANG settings dont mess 
+up the password prompt. 
 
 ### Ansible
 Tested using the following versions:
@@ -57,4 +58,6 @@ ad_server:
 
 ## Leaving the domain
 If you want to reverse the process and remove the machine from the domain, simply run the ‘realm leave’ command followed by the domain name, as shown below. <br/>
-**realm leave example.com**
+```
+realm leave example.com
+```
