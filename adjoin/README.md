@@ -52,8 +52,8 @@ ad_access_groups:
   - helpdesk
 # used for Kerberos setup - may not be nessesary 
 ad_server:
-  fqdn: dc3.itu.local
-  domain: ITU.LOCAL
+  fqdn: dc.my.domain
+  domain: MY.DOMAIN
 ```
 
 ## Leaving the domain
