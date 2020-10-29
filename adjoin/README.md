@@ -1,61 +1,60 @@
 =======
-# domain_join
+# AD domain join
 Automate Linux Machine join AD using Ansible. This module is inspired from the work of 
   * https://github.com/rahulinux/ansible-domain-join 
-Domain Administrators  default group is configured to enable sudo 
+  * https://github.com/riponbanik/ansible-role-domain-join
 
-## Requirements & Dependencies
+The group Domain Administrators is configured with sudo enabled
+
+Note: expect is used to supply the password for join. Please make sure your LANG settings dont mess 
+up the password prompt
 
 ### Ansible
-It was tested on the following versions:
- * 2.4
- * 2.9.6
+Tested using the following versions:
+ * ansible 2.9.6 runnning on openSUSE
 
 ### Operating systems
 
-Tested with RHEL 7
-Tested with RHEL 8
-Targeted for EL 
+Tested with Centos 8
 
 ## Example Playbook
 
-Clone the repository in the roles directory in ansible as install_snmpd and include this role in your list.
+Clone the repository in the roles directory in ansible as adjoin and include this role in your list.
 For example
 
 ```
-- host: all
-  vars_files:
-    - vars/ad.yaml
+---
+- hosts: all
+  # replace vars below with variables from your vault if you like
+  become: yes
+  vars_prompt:
+    - name: ad_user
+      prompt: "AD user for join?"
+      private: no
+    - name: ad_pass
+      prompt: "AD join password?"
   roles:
-    - domain_join
+    - adjoin
 ```
 
 ## Variables
 
+Variables neeeded:
 ```
-You need to privode the details to join linux into domain, like domain user who has right to add client into domain and DNS server and FQDNS.
-Create ad.yaml file with the content below and include it into the plyabook. Make sure /etc/resolv.conf contains the dns server address
 ---
-- ad_server:
-    ip: xxxx
-    fqdn: ad1.example.com
-    ad_user: svc_ad
-    ad-pass: 'xxxx'
-    domain: example.com
-```
-Modify ou_membership to add the machine to custom OU
-
-## Testing 
-```
-sudo realm list
-id __user_name__
-ssh __user_name__@localhost
+# OU to place target in (must exist)
+ou_membership: "OU=Nix Computers,DC=itu,DC=local"
+# usergroups given access ti target
+ad_access_groups:
+  - domain admins
+  - some department
+  - helpdesk
+# used for Kerberos setup - may not be nessesary 
+ad_server:
+  fqdn: dc3.itu.local
+  domain: ITU.LOCAL
 ```
 
 ## Leaving the domain
-If you want to reverse the process and remove yourself from the domain, simply run the ‘realm leave’ command followed by the domain name, as shown below. <br/>
+If you want to reverse the process and remove the machine from the domain, simply run the ‘realm leave’ command followed by the domain name, as shown below. <br/>
 **realm leave example.com**
-
-
->>>>>>> other/master
-

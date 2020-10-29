@@ -87,6 +87,7 @@
 
 - name: Adjust kerberos to our preferences
   # we could have used community.general.ini_file but the result would unindented
+  # also I am not sure if this is nessesary anymore. 
   lineinfile: 
     state: present
     dest: /etc/krb5.conf
