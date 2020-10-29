@@ -40,7 +40,39 @@
       Password.*: "{{ ad_pass }}"
   when: not ad_status.stdout is search('configured:.*kerberos-member')
 
-- name: Adjust sssd to our preferences
+- name: get realm status
+  shell: "realm list"
+  register: realm_status
+  changed_when: False
+
+#- debug:
+    #msg: "{{ item.split(': ')[1].split(', ') }}"
+  #when: '"permitted-groups" in item'
+  #with_items:
+    #- "{{ realm_status.stdout_lines }}"
+
+- set_fact:
+    ad_allowed_now: "{{ item.split(': ')[1].split(', ') }}"
+  when: '"permitted-groups:" in item'
+  with_items:
+    - "{{ realm_status.stdout_lines }}"
+
+- set_fact:
+    ad_add_groups: "{{ ad_access_groups | difference(ad_allowed_now) }}"
+
+- name: add missing access groups
+  shell: "/usr/sbin/realm permit -g \"{{ item }}\""
+  with_items: " {{ ad_add_groups }}"
+  
+- set_fact:
+    ad_remove_groups: "{{ ad_allowed_now | difference(ad_access_groups) }}"
+
+- name: remove excess access groups
+  shell: "/usr/sbin/realm permit -g --withdraw \"{{ item }}\""
+  with_items: " {{ ad_remove_groups }}"
+  
+- name: Adjust sssd to our(?) preferences
+  # I guess this could be rewritten to use community.general.ini_file 
   lineinfile: 
     state: present
     dest: /etc/sssd/sssd.conf
@@ -51,9 +83,10 @@
     - { search: 'fallback_homedir', replace: 'fallback_homedir = /home/%u' }
     - { search: 'krb5_store_password_if_offline', replace: 'krb5_store_password_if_offline = False' }
   notify:
-      - restart sssd
+    - restart sssd
 
 - name: Adjust kerberos to our preferences
+  # we could have used community.general.ini_file but the result would unindented
   lineinfile: 
     state: present
     dest: /etc/krb5.conf
@@ -62,14 +95,16 @@
     regexp: '^(# )?default_realm'
     line: "    default_realm = {{ ad_server.domain|upper }}"
   notify:
-      - restart sssd
+    # not sure if nessesary
+    - restart sssd
 
 - name: Set kerberos default realm
   template:
     src: krb5_realms.j2
     dest: /etc/krb5.conf.d/realms
   notify:
-      - restart sssd
+    # not sure if nessesary
+    - restart sssd
           
 # Keep of my sshd_config - configured elsewhere
 #- name: Allow Password Auth for all users except root
@@ -94,7 +129,7 @@
     group: root
     mode: 0400
 
-- name: Configure SSH for GSSAPIAuthentication
+- name: Default ssh clients to use GSSAPIAuthentication
   lineinfile:
     path: /etc/ssh/ssh_config
     regexp: '^#?\s*?GSSAPIAuthentication'
@@ -108,3 +143,5 @@
     insertafter: '^#GSSAPI options'
   notify:
     - restart sshd
+
+

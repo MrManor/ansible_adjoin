@@ -12,7 +12,8 @@ krb5_realm = {{ ad_server.domain[0] | upper}}
 realmd_tags = manages-system joined-with-samba
 cache_credentials = True
 id_provider = ad
-# ad_access_filter = (|(memberOf=cn=domain\\ admins,ou=Groups,dc={{ ad_server.domain[0].split('.')[0] }},dc=ad_server.domain[0].split('.')[1]))(memberOf=ou=hadoop,dc={{ ad_server.domain[0].split('.')[0] }},dc=ad_server.domain[0].split('.')[1]))) 
+# CN=itafd,OU=DistributionLists,DC=itu,DC=local
+# ad_access_filter = (|(memberOf=cn=domain\\ admins,ou=Groups,dc={{ ad_server.domain[0].split('.')[0] }},dc=ad_server.domain[0].split('.')[1]))(CN=itafd,OU=DistributionLists,dc={{ ad_server.domain[0].split('.')[0] }},dc=ad_server.domain[0].split('.')[1]))) 
 krb5_store_password_if_offline = False
 default_shell = /bin/bash
 ldap_id_mapping = True
