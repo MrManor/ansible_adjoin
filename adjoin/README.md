@@ -5,7 +5,7 @@ Automate Linux Machine join AD using Ansible. This module is inspired from the w
   
  I have done my best to be compliant with Redhats recommandations for domain join and group access filtering
 
-The group Domain Administrators is configured with sudo enabled
+The group Domain Administrators is configured with sudo enabled pr. default
 
 **Warning:** expect is used to supply the password for join. Please make sure your LANG settings dont mess 
 up the password prompt. 
@@ -14,13 +14,13 @@ up the password prompt.
 Tested using the following versions:
  * ansible 2.9.6 runnning on openSUSE
 
-### Operating systems
+### Target Operating systems
 
 Tested with Centos 8
 
 ## Example Playbook
 
-Clone the repository in the roles directory in ansible as adjoin and include this role in your list.
+Clone the repository to the ansible roles directory as adjoin, and include this role in your list.
 For example
 
 ```
@@ -44,7 +44,7 @@ Variables neeeded:
 ```
 ---
 # OU to place target in (must exist)
-ou_membership: "OU=Nix Computers,DC=itu,DC=local"
+ou_membership: "OU=Nix Computers,DC=my,DC=domain"
 # usergroups given access ti target
 ad_access_groups:
   - domain admins
