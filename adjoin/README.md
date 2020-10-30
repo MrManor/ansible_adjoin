@@ -59,5 +59,5 @@ ad_server:
 ## Leaving the domain
 If you want to reverse the process and remove the machine from the domain, simply run the ‘realm leave’ command followed by the domain name, as shown below. <br/>
 ```
-realm leave example.com
+realm leave my.domain
 ```
